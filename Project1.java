@@ -20,13 +20,6 @@ public class Project1 {
     return xorEd;
   }
 
-  public static void permuteIt(String binaryInput) {
-    String[] input = new String[binaryInput.length()];
-    String[] output = new String[binaryInput.length()];
-    for (int i = 0; i < binaryInput.length(); i++) {
-      input[i] = binaryInput.substring(i, i + 1);
-    }
-
   }
  public static void permuteIt(String binaryInput) {
     String[] input = new String[binaryInput.length()];
