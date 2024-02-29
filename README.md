@@ -8,3 +8,5 @@ Added S-table to the class.
 Finished f function method.
 
 Waiting for permutation method.
+
+Added comments to methods.
