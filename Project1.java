@@ -3,7 +3,7 @@
  * Project 1
  * Author: Joey Zhang
  * Author: Gary Wang
- * Version: 2/28/24
+ * Version: 3/6/24
  */
 import java.util.Arrays;
 
@@ -45,7 +45,7 @@ public class Project1 {
 
   /**
    * Method to xor two binary inputs
-   * 
+   *
    * @param binary 1 The first binary input
    * @param binary 2 The second binary input
    * @return The result of xored binary 1 and 2.
@@ -63,41 +63,11 @@ public class Project1 {
   }
 
   /**
-   * The f-function.
-   * 
-   * @param rightHalf The right half of a 64-bit block.
-   * @param The       first 32 digits of the encrypt key.
-   * @return 32-bit string after applied the f-function.
-   */
-  public static String functionF(String rightHalf, String subKey) {
-    String current = xorIt(rightHalf, subKey);
-    String group1 = current.substring(0, 8);
-    String group2 = current.substring(8, 16);
-    String group3 = current.substring(16, 24);
-    String group4 = current.substring(24, 32);
-    int group1Row = Integer.parseInt(group1.substring(0, 4), 2);
-    int group1Col = Integer.parseInt(group1.substring(4, 8), 2);
-    int group2Row = Integer.parseInt(group2.substring(0, 4), 2);
-    int group2Col = Integer.parseInt(group2.substring(4, 8), 2);
-    int group3Row = Integer.parseInt(group3.substring(0, 4), 2);
-    int group3Col = Integer.parseInt(group3.substring(4, 8), 2);
-    int group4Row = Integer.parseInt(group4.substring(0, 4), 2);
-    int group4Col = Integer.parseInt(group4.substring(4, 8), 2);
-    group1 = S[group1Row][group1Col];
-    group2 = S[group2Row][group2Col];
-    group3 = S[group3Row][group3Col];
-    group4 = S[group4Row][group4Col];
-    current = group1 + group2 + group3 + group4;
-    permuteIt(current);
-    return current;
-  }
-
-  /**
    * Permute the s-tabled string using the permute table.
-   * 
+   *
    * @param binaryInput The input 32-bit string.
    */
-  public static void permuteIt(String binaryInput) {
+  public static String permuteIt(String binaryInput) {
     String[] input = new String[binaryInput.length()];
     String[] output = new String[binaryInput.length()];
     for (int i = 0; i < binaryInput.length(); i++) {
@@ -136,8 +106,10 @@ public class Project1 {
     output[30] = input[3];
     output[31] = input[24];
     binaryInput = "";
-    for (int i = 0; i < output.length; i++)
+    for (int i = 0; i < output.length; i++) {
       binaryInput = binaryInput + output[i];
+    }
+    return binaryInput;
   }
 
   /**
@@ -161,7 +133,7 @@ public class Project1 {
     return binaryInput;
   }
 
-  public static String SubstitutionS(String binaryInput) {
+  public static String substitutionS(String binaryInput) {
     String bileft = binaryInput.substring(0, 4);
     String biright = binaryInput.substring(0, 4);
     int deleft = Integer.parseInt(bileft, 2);
@@ -171,9 +143,86 @@ public class Project1 {
     return binaryOutput;
   }
 
+  /**
+   * The f-function.
+   *
+   * @param rightHalf The right half of a 64-bit block.
+   * @param The       first 32 digits of the encrypt key.
+   * @return 32-bit string after applied the f-function.
+   */
+  public static String functionF(String rightHalf, String subKey) {
+    String current = xorIt(rightHalf, subKey);
+    String group1 = current.substring(0, 8);
+    String group2 = current.substring(8, 16);
+    String group3 = current.substring(16, 24);
+    String group4 = current.substring(24, 32);
+    group1 = substitutionS(group1);
+    group2 = substitutionS(group2);
+    group3 = substitutionS(group3);
+    group4 = substitutionS(group4);
+    current = group1 + group2 + group3 + group4;
+    current = permuteIt(current);
+    return current;
+  }
+
+  /**
+  * The key schedule.
+  *
+  * @param inputKey The 56-digit key.
+  * @return An array of 32-digit subkeys.
+  */
+  public static String[] keyScheduleTransform(String inputKey) {
+    String[] keySchedule = new String[10];
+    String left = inputKey.substring(0, 28);
+    String right = inputKey.substring(28, 56);
+    for(int i = 0; i < keySchedule.length; i++) {
+      left = shiftIt(left);
+      right = shiftIt(right);
+      keySchedule[i] = left + right.substring(0, 4);
+    }
+    return keySchedule;
+  }
+
+  public static String encryptBlock(String block, String inputKey) {
+    if (block == "all zeros") {
+      block = "";
+      for (int i = 0; i < 64; i++) {
+        block = block + "0";
+      }
+    }
+    if (block == "all ones") {
+      block = "";
+      for (int i = 0; i < 64; i++) {
+        block = block + "1";
+      }
+    }
+    if (inputKey == "all zeros") {
+      inputKey = "";
+      for (int i = 0; i < 56; i++) {
+        inputKey = inputKey + "0";
+      }
+    }
+    if (inputKey == "all ones") {
+      inputKey = "";
+      for (int i = 0; i < 56; i++) {
+        inputKey = inputKey + "1";
+      }
+    }
+    return block + inputKey;
+  }
+
+  public static String encryption(String longBinaryInput, String inputKey) {
+    return "";
+  }
+
   public static void main(String[] args) {
     // System.out.println(xorIt("1001", "0101"));
     // System.out.println(shiftIt("10010001"));
-    System.out.println(SubstitutionS("10001000"));
+    // System.out.println(substitutionS("10001000"));
+    // System.out.println(encryptBlock("all zeros", "all zeros"));
+    // System.out.println(functionF("00000000000000000000000000000000", "00000000000000000000000000000000"));
+    String[] test = keyScheduleTransform("10000000000000000000000000001000000000000000000000000000");
+    for(String i : test)
+      System.out.println(i);
   }
 }
