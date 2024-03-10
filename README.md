@@ -1,5 +1,6 @@
 # CS172-Project1
-Gary: shiftIt
+# Gary: 
+shiftIt
 
 functionF
 
@@ -15,7 +16,7 @@ textToBinary, binaryToText(two helper methods)
 
 main
 
-Joey:
+# Joey:
 xorIt
 
 permuteIt
