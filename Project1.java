@@ -3,9 +3,15 @@
  * Project 1
  * Author: Joey Zhang
  * Author: Gary Wang
- * Version: 3/8/24
+ * Version: 3/9/24
  */
 import java.util.Arrays;
+import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class Project1 {
   static String[][] S = new String[][] {
@@ -64,6 +70,27 @@ public class Project1 {
   }
 
   /**
+   * Shifts the binary input to the left by one.
+   *
+   * @param The input.
+   * @return The shifted binary expression.
+   * Passed the test.
+   */
+  public static String shiftIt(String binaryInput) {
+    String[] input = new String[binaryInput.length()];
+    String[] output = new String[binaryInput.length()];
+    for (int i = 0; i < binaryInput.length(); i++)
+      input[i] = binaryInput.substring(i, i + 1);
+    for (int i = 0; i < input.length - 1; i++)
+      output[i] = input[i + 1];
+    output[output.length - 1] = input[0];
+    binaryInput = "";
+    for (int i = 0; i < output.length; i++)
+      binaryInput = binaryInput + output[i];
+    return binaryInput;
+  }
+
+  /**
    * Permute the s-tabled string using the permute table.
    *
    * @param binaryInput The input 32-bit string.
@@ -115,27 +142,6 @@ public class Project1 {
   }
 
   /**
-   * Shifts the binary input to the left by one.
-   *
-   * @param The input.
-   * @return The shifted binary expression.
-   * Passed the test.
-   */
-  public static String shiftIt(String binaryInput) {
-    String[] input = new String[binaryInput.length()];
-    String[] output = new String[binaryInput.length()];
-    for (int i = 0; i < binaryInput.length(); i++)
-      input[i] = binaryInput.substring(i, i + 1);
-    for (int i = 0; i < input.length - 1; i++)
-      output[i] = input[i + 1];
-    output[output.length - 1] = input[0];
-    binaryInput = "";
-    for (int i = 0; i < output.length; i++)
-      binaryInput = binaryInput + output[i];
-    return binaryInput;
-  }
-
-  /**
   * Method to substitute 8-bit Strings into their S-box values.
   *
   * @param binaryInput The 32-digit binary String.
@@ -176,25 +182,6 @@ public class Project1 {
   }
 
   /**
-  * The key schedule.
-  *
-  * @param inputKey The 56-digit key.
-  * @return An array of 32-digit subkeys.
-  * Passed the test.
-  */
-  public static String[] keyScheduleTransform(String inputKey) {
-    String[] keySchedule = new String[10];
-    String left = inputKey.substring(0, 28);
-    String right = inputKey.substring(28, 56);
-    for(int i = 0; i < keySchedule.length; i++) {
-      left = shiftIt(left);
-      right = shiftIt(right);
-      keySchedule[i] = left + right.substring(0, 4);
-    }
-    return keySchedule;
-  }
-
-  /**
   * The method to encrypt a 64-bit block.
   *
   * @param block The block user wants to encrypt.
@@ -217,11 +204,104 @@ public class Project1 {
     return leftHalf + rightHalf;
   }
 
-  public static String encryption(String longBinaryInput, String inputKey) {
-    return "";
+  /**
+  * Method to decrypt a 64-bit block.
+  *
+  * @param block The block being decrypted.
+  * @param inputKey The key of the cipher.
+  * @return The string that was decrypted.
+  * Passed the test.
+  */
+  public static String decryptBlock(String block, String inputKey) {
+    String[] keySchedule = new String[10];
+    keySchedule = keyScheduleTransform(inputKey);
+    String leftHalf = block.substring(0, 32);
+    String rightHalf = block.substring(32, 64);
+    String temp = leftHalf;
+    for(int i = 9; i >= 0; i--) {
+      temp = leftHalf;
+      leftHalf = rightHalf;
+      rightHalf = temp;
+      leftHalf = xorIt(leftHalf, functionF(rightHalf, keySchedule[i]));
+    }
+    return leftHalf + rightHalf;
   }
 
-  public static void main(String[] args) {
+  /**
+  * Method to encrypt a long string.
+  *
+  * @param longBinaryInput The whole text in string that user would like to encrypt.
+  * @param inputKey The 56-digit key used during encryption.
+  * @return The binary string that is encrypted;
+  * Passed the test.
+  */
+  public static String encryption(String longBinaryInput, String inputKey) {
+    int difference = 64 - (longBinaryInput.length()%64);
+    for(int i = 1; i <= difference; i++) {
+      longBinaryInput = longBinaryInput + "0";
+    }
+    String[] blocks = new String[(longBinaryInput.length()/64)];
+    for(int i = 0; i < blocks.length; i++) {
+      blocks[i] = longBinaryInput.substring((i*64), ((i+1)*64));
+    }
+    String[] encrypted = new String[blocks.length];
+    for(int i = 0; i < encrypted.length; i++) {
+      encrypted[i] = encryptBlock(blocks[i], inputKey);
+    }
+    String result = "";
+    for(String i : encrypted) {
+      result = result + i;
+    }
+    return result;
+  }
+
+  /**
+  * Method to decrypt a long string.
+  *
+  * @param longBinaryInput The binary input user would like to decrypt.
+  * @param inputKey The key of decryption.
+  * @return The original binary string.
+  * Passed the test.
+  */
+  public static String decryption(String longBinaryInput, String inputKey) {
+    String[] blocks = new String[longBinaryInput.length()/64];
+    for(int i = 0; i < blocks.length; i++) {
+      blocks[i] = longBinaryInput.substring((i*64), ((i+1)*64));
+    }
+    String[] decrypted = new String[blocks.length];
+    for(int i = 0; i < decrypted.length; i++) {
+      decrypted[i] = decryptBlock(blocks[i], inputKey);
+    }
+    String result = "";
+    for(String i : decrypted) {
+      result = result + i;
+    }
+    return result;
+  }
+
+  /**
+  * The key schedule.
+  *
+  * @param inputKey The 56-digit key.
+  * @return An array of 32-digit subkeys.
+  * Passed the test.
+  */
+  public static String[] keyScheduleTransform(String inputKey) {
+    String[] keySchedule = new String[10];
+    String left = inputKey.substring(0, 28);
+    String right = inputKey.substring(28, 56);
+    for(int i = 0; i < keySchedule.length; i++) {
+      left = shiftIt(left);
+      right = shiftIt(right);
+      keySchedule[i] = left + right.substring(0, 4);
+    }
+    return keySchedule;
+  }
+
+  /**
+  * The test method.
+  */
+  public static void runTests() {
     String allOnes = "";
     for(int i = 0; i < 64; i++) {
       allOnes = allOnes + "1";
@@ -230,6 +310,110 @@ public class Project1 {
     for(int i = 0; i < 64; i++) {
       allZeros = allZeros + "0";
     }
+    System.out.println("Out put for: encryption(all ones, all ones)");
+    System.out.println(encryptBlock(allOnes, allOnes));
+    System.out.println("Out put for: encryption(all zeros, all ones)");
+    System.out.println(encryptBlock(allZeros, allOnes));
+    System.out.println("Out put for: encryption(all zeros, all zeros)");
+    System.out.println(encryptBlock(allZeros, allZeros));
+    String block = "1100110010000000000001110101111100010001100101111010001001001100";
+    System.out.println("Out put for: encryption(block, all zeros)");
+    System.out.println(encryptBlock(block, allZeros));
+    System.out.println("Out put for: decryption(all ones, all ones)");
     System.out.println(decryptBlock(allOnes, allOnes));
+    System.out.println("Out put for: decryption(all zeros, all ones)");
+    System.out.println(decryptBlock(allZeros, allOnes));
+    System.out.println("Out put for: decryption(all zeros, all zeros)");
+    System.out.println(decryptBlock(allZeros, allZeros));
+    block = "0101011010001110111001000111100001001110010001100110000011110101";
+    System.out.println("Out put for: decryption(block, all ones)");
+    System.out.println(decryptBlock(block, allOnes));
+    block = "0011000101110111011100100101001001001101011010100110011111010111";
+    System.out.println("Out put for: decryption(block, all zeros)");
+    System.out.println(decryptBlock(block, allZeros));
+  }
+
+  /**
+  * Method to convert input string into ascii code in binary.
+  *
+  * @param input The input String.
+  * @return The string, but each character in the 8-bit ascii code.
+  * Passed the test.
+  */
+  public static String textToBinary(String input) {
+    int[] ascii = new int[input.length()];
+    for(int i = 0; i < input.length(); i++) {
+      ascii[i] = (int)(input.charAt(i));
+    }
+    String[] asciiInBinary = new String[input.length()];
+    for(int i = 0; i < input.length(); i++) {
+      asciiInBinary[i] = Integer.toBinaryString(ascii[i]);
+    }
+    for(int i = 0; i < asciiInBinary.length; i++) {
+      for(int x = (8 - asciiInBinary[i].length()); x > 0; x--) {
+        asciiInBinary[i] = "0" + asciiInBinary[i];
+      }
+    }
+    String result = "";
+    for (String i : asciiInBinary) {
+      result = result + i;
+    }
+    return result;
+  }
+
+  /**
+  * The method to convert a series of binary ascii codes into its original characters.
+  *
+  * @param binaryInput The binary string input.
+  * @return A string of characters represented by the binary input.
+  * Passed the test.
+  */
+  public static String binaryToText(String binaryInput) {
+    String[] asciiInBinary = new String[(binaryInput.length() / 8)];
+    for(int i = 0; i < asciiInBinary.length; i++) {
+      asciiInBinary[i] = binaryInput.substring((i*8), ((i+1)*8));
+    }
+    int[] ascii = new int[asciiInBinary.length];
+    for(int i = 0; i < ascii.length; i++) {
+      ascii[i] = Integer.parseInt(asciiInBinary[i], 2);
+    }
+    String result = "";
+    for(int i = 0; i < ascii.length; i++) {
+      result = result + ((char)ascii[i]);
+    }
+    return result;
+  }
+
+  public static void main(String[] args) {
+    runTests();
+    Scanner keyboard = new Scanner(System.in);
+    System.out.println("Do you want to encrypt or decrypt (E/D):");
+    String option = keyboard.nextLine();
+    System.out.println("File name:");
+    String fileName = keyboard.nextLine();
+    System.out.println("Secret key:");
+    String secretKey = keyboard.nextLine();
+    System.out.println("Output file:");
+    String outputName = keyboard.nextLine();
+    if(option.equals("E")); {
+      try {
+        FileReader fileReader = new FileReader(fileName);
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        String line;
+        String stringInput = "";
+        while ((line = bufferedReader.readLine()) != null) {
+          stringInput = stringInput + line + System.lineSeparator();
+        }
+        String binaryInput = textToBinary(stringInput);
+        String encrypted = encryption(binaryInput, secretKey);
+        System.out.println(encrypted);
+        FileWriter fileWriter1 = new FileWriter(outputName);
+        BufferedWriter bufferedWriter1 = new BufferedWriter(fileWriter1);
+        //Having problem here.
+        bufferedWriter1.write(encrypted, 0, encrypted.length());
+      }
+      catch (IOException e) {
+      }
+    }
   }
 }
